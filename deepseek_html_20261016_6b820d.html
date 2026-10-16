@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR Code Generator</title>
+<script src="https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
+<style>
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, 'Segoe UI', Arial, sans-serif;
+    background: #f5f5f5;
+    color: #111;
+    margin: 0;
+    padding: 30px 16px;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  .wrap {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 30px;
+  }
+
+  h1 {
+    font-size: 26px;
+    margin: 0 0 6px;
+    color: #111;
+  }
+
+  .sub {
+    color: #555;
+    font-size: 15px;
+    margin: 0 0 25px;
+  }
+
+  .tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #eee;
+  }
+
+  .tab {
+    padding: 9px 16px;
+    border: 1px solid #ccc;
+    background: #fff;
+    color: #333;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 6px;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+
+  .tab:hover {
+    background: #f0f0f0;
+  }
+
+  .tab.active {
+    background: #111;
+    color: #fff;
+    border-color: #111;
+  }
+
+  .content { display: none; }
+  .content.active { display: block; }
+
+  label {
+    display: block;
+    font-size: 15px;
+    font-weight: 600;
+    margin: 16px 0 6px;
+    color: #111;
+  }
+
+  input, select, textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 15px;
+    font-family: inherit;
+    color: #111;
+    background: #fff;
+    transition: border 0.15s;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: #111;
+  }
+
+  textarea { min-height: 80px; resize: vertical; }
+
+  .row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .hint {
+    font-size: 13px;
+    color: #666;
+    margin: 6px 0 0;
+  }
+
+  #preview {
+    text-align: center;
+    padding: 30px;
+    border: 2px dashed #ddd;
+    border-radius: 8px;
+    min-height: 320px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 24px;
+    background: #fafafa;
+    transition: all 0.2s;
+  }
+
+  #preview:has(canvas) {
+    border-style: solid;
+    border-color: #111;
+    background: #fff;
+  }
+
+  #preview p {
+    color: #777;
+    font-size: 15px;
+  }
+
+  button.action {
+    background: #111;
+    color: #fff;
+    border: none;
+    padding: 14px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 6px;
+    font-family: inherit;
+    width: 100%;
+    margin-top: 16px;
+    transition: background 0.15s;
+  }
+
+  button.action:hover { background: #000; }
+
+  button.secondary {
+    background: #fff;
+    color: #333;
+    border: 1px solid #ccc;
+    padding: 10px 16px;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 6px;
+    font-family: inherit;
+    margin-top: 8px;
+    width: auto;
+  }
+
+  button.secondary:hover { background: #f0f0f0; }
+
+  .section-title {
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #666;
+    margin: 30px 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eee;
+  }
+
+  .footer {
+    text-align: center;
+    color: #888;
+    font-size: 13px;
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+  }
+
+  input[type="color"] {
+    height: 50px;
+    padding: 4px;
+    cursor: pointer;
+  }
+
+  input[type="range"] {
+    padding: 0;
+    height: 8px;
+    cursor: pointer;
+  }
+
+  input[type="file"] {
+    padding: 10px;
+    font-size: 14px;
+  }
+
+  @media (max-width: 600px) {
+    .wrap { padding: 20px; }
+    h1 { font-size: 22px; }
+    .row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <h1>QR Code Generator</h1>
+  <p class="sub">Create a free QR code for any link, phone number, WiFi, or text.</p>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab(event,'link')">Link</button>
+    <button class="tab" onclick="switchTab(event,'phone')">Phone</button>
+    <button class="tab" onclick="switchTab(event,'sms')">SMS</button>
+    <button class="tab" onclick="switchTab(event,'email')">Email</button>
+    <button class="tab" onclick="switchTab(event,'wifi')">WiFi</button>
+    <button class="tab" onclick="switchTab(event,'whatsapp')">WhatsApp</button>
+    <button class="tab" onclick="switchTab(event,'social')">Social</button>
+    <button class="tab" onclick="switchTab(event,'media')">Media</button>
+    <button class="tab" onclick="switchTab(event,'text')">Text</button>
+  </div>
+
+  <div id="link" class="content active">
+    <label>Website URL</label>
+    <input type="text" id="linkInput" placeholder="https://example.com" oninput="generate()">
+  </div>
+
+  <div id="phone" class="content">
+    <label>Phone Number</label>
+    <input type="tel" id="phoneInput" placeholder="+1 555 123 4567" oninput="generate()">
+    <p class="hint">Scanning will open the dialer with this number.</p>
+  </div>
+
+  <div id="sms" class="content">
+    <label>Phone Number</label>
+    <input type="tel" id="smsPhone" placeholder="+1 555 123 4567" oninput="generate()">
+    <label>Message</label>
+    <textarea id="smsMsg" placeholder="Type your message..." oninput="generate()"></textarea>
+  </div>
+
+  <div id="email" class="content">
+    <label>Email Address</label>
+    <input type="email" id="emailTo" placeholder="name@example.com" oninput="generate()">
+    <label>Subject</label>
+    <input type="text" id="emailSubject" placeholder="Subject line" oninput="generate()">
+    <label>Message</label>
+    <textarea id="emailBody" placeholder="Your message..." oninput="generate()"></textarea>
+  </div>
+
+  <div id="wifi" class="content">
+    <label>Network Name (SSID)</label>
+    <input type="text" id="wifiName" placeholder="MyWiFi" oninput="generate()">
+    <label>Password</label>
+    <input type="text" id="wifiPass" placeholder="Enter password" oninput="generate()">
+    <label>Security Type</label>
+    <select id="wifiType" onchange="generate()">
+      <option value="WPA">WPA / WPA2</option>
+      <option value="WEP">WEP</option>
+      <option value="nopass">No Password</option>
+    </select>
+  </div>
+
+  <div id="whatsapp" class="content">
+    <label>WhatsApp Number (digits only)</label>
+    <input type="tel" id="waInput" placeholder="15551234567" oninput="generate()">
+    <label>Pre-filled Message (optional)</label>
+    <input type="text" id="waMsg" placeholder="Hi there!" oninput="generate()">
+  </div>
+
+  <div id="social" class="content">
+    <label>Platform</label>
+    <select id="socialType" onchange="generate()">
+      <option value="ig">Instagram</option>
+      <option value="tt">TikTok</option>
+      <option value="snap">Snapchat</option>
+      <option value="x">X (Twitter)</option>
+      <option value="yt">YouTube</option>
+      <option value="fb">Facebook</option>
+    </select>
+    <label>Username (without @)</label>
+    <input type="text" id="socialUser" placeholder="username" oninput="generate()">
+  </div>
+
+  <div id="media" class="content">
+    <label>Image or Video URL</label>
+    <input type="text" id="mediaUrl" placeholder="https://..." oninput="generate()">
+    <p class="hint">Upload your file to YouTube, Imgur, or Google Drive and paste the public link.</p>
+  </div>
+
+  <div id="text" class="content">
+    <label>Text</label>
+    <textarea id="textInput" placeholder="Type anything..." oninput="generate()"></textarea>
+  </div>
+
+  <div class="section-title">Customize</div>
+
+  <label>Size: <span id="sizeVal">300</span> px</label>
+  <input type="range" id="size" min="200" max="800" value="300"
+    oninput="document.getElementById('sizeVal').textContent=this.value; generate()">
+
+  <div class="row" style="margin-top:16px;">
+    <div>
+      <label>Foreground Color</label>
+      <input type="color" id="fgColor" value="#000000" oninput="generate()">
+    </div>
+    <div>
+      <label>Background Color</label>
+      <input type="color" id="bgColor" value="#ffffff" oninput="generate()">
+    </div>
+  </div>
+
+  <label>Center Logo (optional)</label>
+  <input type="file" id="logoInput" accept="image/*" onchange="loadLogo(event)">
+  <button class="secondary" onclick="clearLogo()">Remove Logo</button>
+
+  <div class="section-title">Preview</div>
+
+  <div id="preview">
+    <p>Your QR code will appear here.</p>
+  </div>
+
+  <button class="action" onclick="downloadQR()">Download PNG</button>
+
+  <div class="footer">
+    Free QR code generator. Made by me.
+  </div>
+</div>
+
+<script>
+let qrCode = null;
+let logoDataUrl = null;
+
+function switchTab(e, id) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+  e.target.classList.add('active');
+  document.getElementById(id).classList.add('active');
+  generate();
+}
+
+function getActiveTab() {
+  const t = document.querySelector('.tab.active');
+  return t.getAttribute('onclick').match(/'([^']+)'/)[1];
+}
+
+function buildData() {
+  const tab = getActiveTab();
+  const v = id => document.getElementById(id)?.value.trim() || '';
+
+  if (tab === 'link') return v('linkInput');
+  if (tab === 'phone') return v('phoneInput') ? 'tel:' + v('phoneInput') : '';
+  if (tab === 'sms') {
+    if (!v('smsPhone')) return '';
+    return 'SMSTO:' + v('smsPhone') + (v('smsMsg') ? ':' + v('smsMsg') : '');
+  }
+  if (tab === 'email') {
+    if (!v('emailTo')) return '';
+    let p = [];
+    if (v('emailSubject')) p.push('subject=' + encodeURIComponent(v('emailSubject')));
+    if (v('emailBody')) p.push('body=' + encodeURIComponent(v('emailBody')));
+    return 'mailto:' + v('emailTo') + (p.length ? '?' + p.join('&') : '');
+  }
+  if (tab === 'wifi') {
+    if (!v('wifiName')) return '';
+    const t = document.getElementById('wifiType').value;
+    if (t === 'nopass') return 'WIFI:T:nopass;S:' + v('wifiName') + ';;';
+    return 'WIFI:T:' + t + ';S:' + v('wifiName') + ';P:' + v('wifiPass') + ';;';
+  }
+  if (tab === 'whatsapp') {
+    const n = v('waInput').replace(/\D/g, '');
+    if (!n) return '';
+    return 'https://wa.me/' + n + (v('waMsg') ? '?text=' + encodeURIComponent(v('waMsg')) : '');
+  }
+  if (tab === 'social') {
+    const u = v('socialUser').replace('@', '');
+    if (!u) return '';
+    const t = document.getElementById('socialType').value;
+    const map = {
+      ig: 'https://instagram.com/' + u,
+      tt: 'https://tiktok.com/@' + u,
+      snap: 'https://snapchat.com/add/' + u,
+      x: 'https://x.com/' + u,
+      yt: 'https://youtube.com/@' + u,
+      fb: 'https://facebook.com/' + u
+    };
+    return map[t];
+  }
+  if (tab === 'media') return v('mediaUrl');
+  if (tab === 'text') return v('textInput');
+  return '';
+}
+
+function generate() {
+  const data = buildData();
+  const preview = document.getElementById('preview');
+
+  if (!data) {
+    preview.innerHTML = '<p>Your QR code will appear here.</p>';
+    return;
+  }
+
+  const size = parseInt(document.getElementById('size').value);
+  const fg = document.getElementById('fgColor').value;
+  const bg = document.getElementById('bgColor').value;
+
+  const opts = {
+    data: data,
+    image: logoDataUrl || undefined,
+    width: size,
+    height: size,
+    margin: 10,
+    qrOptions: { errorCorrectionLevel: 'H' },
+    dotsOptions: { color: fg, type: 'square' },
+    backgroundOptions: { color: bg },
+    cornersSquareOptions: { type: 'square', color: fg },
+    cornersDotOptions: { color: fg },
+    imageOptions: { crossOrigin: 'anonymous', margin: 5, imageSize: 0.4 }
+  };
+
+  if (qrCode) {
+    qrCode.update(opts);
+  } else {
+    preview.innerHTML = '';
+    qrCode = new QRCodeStyling(opts);
+    qrCode.append(preview);
+  }
+}
+
+function loadLogo(event) {
+  const f = event.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = e => { logoDataUrl = e.target.result; generate(); };
+  r.readAsDataURL(f);
+}
+
+function clearLogo() {
+  logoDataUrl = null;
+  document.getElementById('logoInput').value = '';
+  generate();
+}
+
+function downloadQR() {
+  if (!qrCode) { alert('Please enter something first.'); return; }
+  qrCode.download({ name: 'qr-code', extension: 'png' });
+}
+
+generate();
+</script>
+
+</body>
+</html>
